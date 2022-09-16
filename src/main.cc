@@ -34,6 +34,7 @@
 #include "postprocess.h"
 
 #define PERF_WITH_POST 1
+
 /*-------------------------------------------
                   Functions
 -------------------------------------------*/
@@ -41,13 +42,14 @@
 static void dump_tensor_attr(rknn_tensor_attr *attr)
 {
     printf("  index=%d, name=%s, n_dims=%d, dims=[%d, %d, %d, %d], n_elems=%d, size=%d, fmt=%s, type=%s, qnt_type=%s, "
-           "zp=%d, scale=%f\n",
-           attr->index, attr->name, attr->n_dims, attr->dims[0], attr->dims[1], attr->dims[2], attr->dims[3],
-           attr->n_elems, attr->size, get_format_string(attr->fmt), get_type_string(attr->type),
-           get_qnt_type_string(attr->qnt_type), attr->zp, attr->scale);
+           "zp=%d, scale=%f\n", attr->index, attr->name, attr->n_dims, attr->dims[0], attr->dims[1]
+           , attr->dims[2], attr->dims[3], attr->n_elems, attr->size, get_format_string(attr->fmt)
+           , get_type_string(attr->type), get_qnt_type_string(attr->qnt_type), attr->zp
+           , attr->scale);
 }
 
-double __get_us(struct timeval t) { return (t.tv_sec * 1000000 + t.tv_usec); }
+double __get_us(struct timeval t)
+{ return (t.tv_sec * 1000000 + t.tv_usec); }
 
 static unsigned char *load_data(FILE *fp, size_t ofst, size_t sz)
 {
@@ -68,7 +70,7 @@ static unsigned char *load_data(FILE *fp, size_t ofst, size_t sz)
         return NULL;
     }
 
-    data = (unsigned char *)malloc(sz);
+    data = (unsigned char *) malloc(sz);
     if (data == NULL)
     {
         printf("buffer malloc failure.\n");
@@ -147,10 +149,10 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    printf("post process config: box_conf_threshold = %.2f, nms_threshold = %.2f\n",
-           box_conf_threshold, nms_threshold);
+    printf("post process config: box_conf_threshold = %.2f, nms_threshold = %.2f\n"
+           , box_conf_threshold, nms_threshold);
 
-    model_name = (char *)argv[1];
+    model_name = (char *) argv[1];
     char *image_name = argv[2];
 
     printf("Read %s ...\n", image_name);
@@ -178,15 +180,13 @@ int main(int argc, char **argv)
     }
 
     rknn_sdk_version version;
-    ret = rknn_query(ctx, RKNN_QUERY_SDK_VERSION, &version,
-                     sizeof(rknn_sdk_version));
+    ret = rknn_query(ctx, RKNN_QUERY_SDK_VERSION, &version, sizeof(rknn_sdk_version));
     if (ret < 0)
     {
         printf("rknn_init error ret=%d\n", ret);
         return -1;
     }
-    printf("sdk version: %s driver version: %s\n", version.api_version,
-           version.drv_version);
+    printf("sdk version: %s driver version: %s\n", version.api_version, version.drv_version);
 
     rknn_input_output_num io_num;
     ret = rknn_query(ctx, RKNN_QUERY_IN_OUT_NUM, &io_num, sizeof(io_num));
@@ -195,16 +195,14 @@ int main(int argc, char **argv)
         printf("rknn_init error ret=%d\n", ret);
         return -1;
     }
-    printf("model input num: %d, output num: %d\n", io_num.n_input,
-           io_num.n_output);
+    printf("model input num: %d, output num: %d\n", io_num.n_input, io_num.n_output);
 
     rknn_tensor_attr input_attrs[io_num.n_input];
     memset(input_attrs, 0, sizeof(input_attrs));
     for (int i = 0; i < io_num.n_input; i++)
     {
         input_attrs[i].index = i;
-        ret = rknn_query(ctx, RKNN_QUERY_INPUT_ATTR, &(input_attrs[i]),
-                         sizeof(rknn_tensor_attr));
+        ret = rknn_query(ctx, RKNN_QUERY_INPUT_ATTR, &(input_attrs[i]), sizeof(rknn_tensor_attr));
         if (ret < 0)
         {
             printf("rknn_init error ret=%d\n", ret);
@@ -218,8 +216,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < io_num.n_output; i++)
     {
         output_attrs[i].index = i;
-        ret = rknn_query(ctx, RKNN_QUERY_OUTPUT_ATTR, &(output_attrs[i]),
-                         sizeof(rknn_tensor_attr));
+        ret = rknn_query(ctx, RKNN_QUERY_OUTPUT_ATTR, &(output_attrs[i]), sizeof(rknn_tensor_attr));
         dump_tensor_attr(&(output_attrs[i]));
     }
 
@@ -241,8 +238,7 @@ int main(int argc, char **argv)
         channel = input_attrs[0].dims[3];
     }
 
-    printf("model input height=%d, width=%d, channel=%d\n", height, width,
-           channel);
+    printf("model input height=%d, width=%d, channel=%d\n", height, width, channel);
 
     rknn_input inputs[1];
     memset(inputs, 0, sizeof(inputs));
@@ -254,21 +250,27 @@ int main(int argc, char **argv)
 
     void *resize_buf = malloc(height * width * channel);
 
-    src = wrapbuffer_virtualaddr((void *)img.data, img_width, img_height, RK_FORMAT_RGB_888);
-    dst = wrapbuffer_virtualaddr((void *)resize_buf, width, height, RK_FORMAT_RGB_888);
+    src = wrapbuffer_virtualaddr((void *) img.data, img_width, img_height, RK_FORMAT_RGB_888);
+    dst = wrapbuffer_virtualaddr((void *) resize_buf, width, height, RK_FORMAT_RGB_888);
     ret = imcheck(src, dst, src_rect, dst_rect);
     if (IM_STATUS_NOERROR != ret)
     {
-        printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS)ret));
+        printf("%d, check error! %s", __LINE__, imStrError((IM_STATUS) ret));
         return -1;
     }
+
+    // opencv
+//    cv::Mat resize_img(cv::Size(width, height), CV_8UC3, resize_buf);
+//    cv::resize(img, resize_img, cv::Size(width, height)); resize_buf = resize_img.data;
+    // rga
     IM_STATUS STATUS = imresize(src, dst);
     cv::Mat resize_img(cv::Size(width, height), CV_8UC3, resize_buf);
+
     cv::imwrite("resize_input.jpg", resize_img);
 
     inputs[0].buf = resize_buf;
     gettimeofday(&start_time, NULL);
-    rknn_inputs_set(ctx, io_num.n_input, inputs);
+    rknn_inputs_set(ctx, 1, inputs);
 
     rknn_output outputs[io_num.n_output];
     memset(outputs, 0, sizeof(outputs));
@@ -280,12 +282,11 @@ int main(int argc, char **argv)
     ret = rknn_run(ctx, NULL);
     ret = rknn_outputs_get(ctx, io_num.n_output, outputs, NULL);
     gettimeofday(&stop_time, NULL);
-    printf("once run use %f ms\n",
-           (__get_us(stop_time) - __get_us(start_time)) / 1000);
+    printf("once run use %f ms\n", (__get_us(stop_time) - __get_us(start_time)) / 1000);
 
     //post process
-    float scale_w = (float)width / img_width;
-    float scale_h = (float)height / img_height;
+    float scale_w = (float) width / img_width;
+    float scale_h = (float) height / img_height;
 
     detect_result_group_t detect_result_group;
     std::vector<float> out_scales;
@@ -295,8 +296,9 @@ int main(int argc, char **argv)
         out_scales.push_back(output_attrs[i].scale);
         out_zps.push_back(output_attrs[i].zp);
     }
-    post_process((int8_t *)outputs[0].buf, (int8_t *)outputs[1].buf, (int8_t *)outputs[2].buf, height, width,
-                 box_conf_threshold, nms_threshold, scale_w, scale_h, out_zps, out_scales, &detect_result_group);
+    post_process((int8_t *) outputs[0].buf, (int8_t *) outputs[1].buf, (int8_t *) outputs[2].buf
+                 , height, width, box_conf_threshold, nms_threshold, scale_w, scale_h, out_zps
+                 , out_scales, &detect_result_group);
 
     // Draw Objects
     char text[256];
@@ -304,16 +306,17 @@ int main(int argc, char **argv)
     {
         detect_result_t *det_result = &(detect_result_group.results[i]);
         sprintf(text, "%s %.1f%%", det_result->name, det_result->prop * 100);
-        printf("%s @ (%d %d %d %d) %f\n",
-               det_result->name,
-               det_result->box.left, det_result->box.top, det_result->box.right, det_result->box.bottom,
-               det_result->prop);
+        printf("%s @ (%d %d %d %d) %f\n", det_result->name, det_result->box.left
+               , det_result->box.top, det_result->box.right, det_result->box.bottom
+               , det_result->prop);
         int x1 = det_result->box.left;
         int y1 = det_result->box.top;
         int x2 = det_result->box.right;
         int y2 = det_result->box.bottom;
         rectangle(orig_img, cv::Point(x1, y1), cv::Point(x2, y2), cv::Scalar(255, 0, 0, 255), 3);
-        putText(orig_img, text, cv::Point(x1, y1 + 12), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+        putText(orig_img, text, cv::Point(x1, y1 + 12), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0
+                                                                                                  , 0
+                                                                                                  , 0));
     }
 
     imwrite("./out.jpg", orig_img);
@@ -328,17 +331,18 @@ int main(int argc, char **argv)
         ret = rknn_run(ctx, NULL);
         ret = rknn_outputs_get(ctx, io_num.n_output, outputs, NULL);
 #if PERF_WITH_POST
-        post_process((int8_t *)outputs[0].buf, (int8_t *)outputs[1].buf, (int8_t *)outputs[2].buf, height, width,
-                     box_conf_threshold, nms_threshold, scale_w, scale_h, out_zps, out_scales, &detect_result_group);
+        post_process((int8_t *) outputs[0].buf, (int8_t *) outputs[1].buf, (int8_t *) outputs[2].buf
+                     , height, width, box_conf_threshold, nms_threshold, scale_w, scale_h, out_zps
+                     , out_scales, &detect_result_group);
 #endif
         ret = rknn_outputs_release(ctx, io_num.n_output, outputs);
     }
     gettimeofday(&stop_time, NULL);
     printf("loop count = %d , average run  %f ms\n", test_count,
-           (__get_us(stop_time) - __get_us(start_time)) / 1000.0 / test_count);
+            (__get_us(stop_time) - __get_us(start_time)) / 1000.0 / test_count);
 
     deinitPostProcess();
-    
+
     // release
     ret = rknn_destroy(ctx);
 

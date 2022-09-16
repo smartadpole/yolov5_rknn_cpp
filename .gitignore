@@ -13,3 +13,5 @@ install/
 sample/*.txt
 *.gpu
 *.npu
+3rdparty/
+rknn_api.h

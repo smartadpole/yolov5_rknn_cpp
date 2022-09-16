@@ -31,6 +31,7 @@ else()
 #  endif()
   set(RKNN_RT_LIB ${RKNN_API_PATH}/${LIB_ARCH}/librknnrt.so)
 endif()
+
 include_directories(${RKNN_API_PATH}/include)
 include_directories(${CMAKE_SOURCE_DIR}/../3rdparty)
 
@@ -80,6 +81,7 @@ add_executable(rknn_yolov5_demo
 
 target_link_libraries(rknn_yolov5_demo
   ${RKNN_RT_LIB}
+  -lrknnrt
   ${RGA_LIB}
   ${OpenCV_LIBS}
 )

@@ -21,6 +21,8 @@
 #include <set>
 #include "postprocess.h"
 #include <stdint.h>
+#include <iostream>
+#include <iomanip>
 #define LABEL_NALE_TXT_PATH "./model/rubby.txt"
 
 static char *labels[OBJ_CLASS_NUM];
@@ -215,6 +217,13 @@ static int process(int8_t *input, int *anchor, int grid_h, int grid_w, int heigh
                    std::vector<float> &boxes, std::vector<float> &objProbs, std::vector<int> &classId,
                    float threshold, int32_t zp, float scale)
 {
+    std::cout << "output, zp " << zp << " scale " << scale << std::endl;
+    for (int j = 0; j < 10; j++)
+    {
+        std::cout << std::fixed << std::setprecision(3) << (int)input[j] << "/"
+                  << deqnt_affine_to_f32(input[j], zp, scale) << ", ";
+    }
+    std::cout << std::endl;
 
     int validCount = 0;
     int grid_len = grid_h * grid_w;
@@ -289,7 +298,7 @@ int post_process(int8_t *input0, int8_t *input1, int8_t *input2, int model_in_h,
     std::vector<float> filterBoxes;
     std::vector<float> objProbs;
     std::vector<int> classId;
-    
+
     // stride 8
     int stride0 = 8;
     int grid_h0 = model_in_h / stride0;
@@ -330,7 +339,7 @@ int post_process(int8_t *input0, int8_t *input1, int8_t *input2, int model_in_h,
     quick_sort_indice_inverse(objProbs, 0, validCount - 1, indexArray);
 
     std::set<int> class_set(std::begin(classId),std::end(classId));
-    
+
     for(auto c : class_set){
         nms(validCount, filterBoxes, classId, indexArray, c, nms_threshold);
     }
